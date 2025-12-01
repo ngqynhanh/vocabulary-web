@@ -1,0 +1,184 @@
+/* Global Reset */
+* { box-sizing: border-box; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #f4f4f9; }
+
+/* Navigation (Transparent on top of Hero) */
+nav {
+    background: #0B162A; /* Deep Vocabulary.com Navy */
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    border-bottom: 1px solid #1c2b45;
+}
+nav a { color: #a8b1ff; text-decoration: none; font-weight: bold; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+nav a:hover { color: white; }
+
+/* --- HERO SECTION (The Search Header) --- */
+.hero-section {
+    background-color: #0B162A; /* The Deep Navy from your image */
+    color: white;
+    padding: 60px 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    font-weight: 300; /* Thin font like the image */
+}
+
+/* The Pill-Shaped Search Bar */
+.search-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+}
+
+#search-input {
+    width: 100%;
+    padding: 15px 25px;
+    font-size: 1.1rem;
+    border-radius: 50px; /* Pill shape */
+    border: none;
+    outline: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+#search-btn {
+    display: none; /* Hide default button, we use Enter key or icon style */
+}
+
+.suggestions {
+    position: absolute;
+    top: 55px; /* Right below the pill */
+    left: 20px;
+    right: 20px;
+    background: white;
+    border-radius: 8px;
+    color: #333;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    z-index: 100;
+    overflow: hidden;
+    text-align: left;
+}
+.suggestions div { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid #eee; }
+.suggestions div:hover { background: #f0f7ff; color: #0B162A; }
+
+
+/* --- CONTENT AREA --- */
+.container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+
+/* Result Box (Word of the Day style) */
+#result-box {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    min-height: 200px;
+}
+#result-box h2 { color: #0B162A; font-size: 3rem; margin-top: 0; }
+#result-box p { font-size: 1.2rem; line-height: 1.6; color: #444; }
+
+
+/* --- FLASHCARD SPECIFIC STYLES --- */
+.flashcard-page-body {
+    background-color: #0B162A; /* Deep Navy Background */
+    color: white;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.flashcard-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+/* The Card Itself */
+.flashcard {
+    background-color: #152238; /* Slightly lighter Navy for Card */
+    width: 100%;
+    max-width: 800px;
+    height: 400px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.1s, background-color 0.2s;
+    position: relative;
+    border: 1px solid #2a3b55;
+}
+
+.flashcard:active { transform: scale(0.98); }
+
+/* Text inside the card */
+.card-content {
+    font-size: 3rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 20px;
+    user-select: none;
+    color: white;
+}
+
+/* Label (Front/Back) */
+.card-label {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 0.9rem;
+    color: #4CAF50; /* Green Accent like the "Sign Up" button */
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+/* Icons top right */
+.card-icons {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: #a8b1ff;
+    font-size: 1.2rem;
+    gap: 15px;
+    display: flex;
+}
+.card-icons span:hover { color: white; }
+
+/* Footer Controls */
+.controls {
+    display: flex;
+    align-items: center;
+    margin-top: 30px;
+}
+
+.round-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    background: #4CAF50; /* The Green Button Color */
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+}
+
+.round-btn:hover {
+    background: #43a047;
+    transform: translateY(-2px);
+}

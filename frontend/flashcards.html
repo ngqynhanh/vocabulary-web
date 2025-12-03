@@ -38,7 +38,7 @@
             <div class="card-icons">
                 <span title="Edit">✎</span>
                 <span title="Audio">🔊</span>
-                <span title="Star">★</span>
+                <span title="Star" id="favorite-star" style="cursor:pointer;">★</span>
             </div>
             
             <!-- Main Content Text -->
@@ -59,9 +59,11 @@
             </div>
 
             <!-- Center: Navigation -->
-            <div style="display: flex; gap: 20px;">
+            <div style="display: flex; gap: 20px; align-items:center;">
                 <button class="round-btn" onclick="alert('Previous is not supported yet')">←</button>
                 <button class="round-btn" id="next-card-btn">→</button>
+                <button class="round-btn" id="remember-btn" title="Remember">✓</button>
+                <button class="round-btn" id="notremember-btn" title="Not Remember">✗</button>
             </div>
 
             <!-- Right: Extra Actions -->
@@ -75,6 +77,12 @@
         <p style="margin-top: 20px; color: #586380; font-size: 0.9rem;">
             Click card to flip • Use arrows to navigate
         </p>
+
+        <!-- External Definitions Panel -->
+        <div style="width:100%; max-width:800px; margin-top: 10px;">
+            <button id="load-external-btn" class="round-btn" title="Load external definitions">External defs</button>
+            <div id="external-defs" style="margin-top:8px; color:#a8b1ff; font-size:0.9rem;"></div>
+        </div>
 
     </div>
 

@@ -24,6 +24,22 @@ async function handleSearch(word) {
             if (data.correction) {
                 msg += `<p>Did you mean: <b>${data.correction}</b>?</p>`;
             }
+            // Try external dictionary API via backend proxy
+            try {
+                const extRes = await fetch(`http://localhost:8080/external/definitions?word=${encodeURIComponent(word)}`);
+                const ext = await extRes.json();
+                if (ext.status === 'ok' && Array.isArray(ext.data) && ext.data.length > 0) {
+                    const entry = ext.data[0];
+                    const meanings = (entry.meanings || []).slice(0, 3);
+                    const defsHtml = meanings.map(m => {
+                        const defs = (m.definitions || []).slice(0, 2).map(d => `• ${d.definition}`).join('<br/>');
+                        return `<div><b>${m.partOfSpeech || ''}</b><br/>${defs}</div>`;
+                    }).join('<hr/>' );
+                    msg += `<div style="margin-top:8px;">External definitions:<br/>${defsHtml}</div>`;
+                } else {
+                    msg += `<div style="margin-top:8px; color:#586380;">No external definitions found.</div>`;
+                }
+            } catch {}
             resultBox.innerHTML = msg;
         }
     } catch (err) {

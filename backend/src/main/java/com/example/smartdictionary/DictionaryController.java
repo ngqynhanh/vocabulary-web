@@ -19,6 +19,7 @@ public class DictionaryController {
     private final Trie trie = new Trie();
     private final HistoryStack history = new HistoryStack();
     private final FlashcardList flashcards = new FlashcardList();
+    private final NotRememberedStack notRemembered = new NotRememberedStack();
     private Map<String, String> dictionaryData = new HashMap<>();
 
     // Load data when server starts
@@ -75,12 +76,46 @@ public class DictionaryController {
 
     @GetMapping("/flashcard")
     public Map<String, String> getFlashcard() {
-        FlashcardList.CardNode card = flashcards.getNext();
+        FlashcardList.CardNode card = flashcards.getCurrent();
         if (card == null) return null;
-        
+
         Map<String, String> response = new HashMap<>();
         response.put("word", card.word);
         response.put("definition", card.definition);
         return response;
+    }
+
+    @PostMapping("/flashcard/next")
+    public Map<String, String> nextFlashcard() {
+        FlashcardList.CardNode card = flashcards.getNext();
+        if (card == null) return null;
+
+        Map<String, String> response = new HashMap<>();
+        response.put("word", card.word);
+        response.put("definition", card.definition);
+        return response;
+    }
+
+    @PostMapping("/flashcard/remember")
+    public Map<String, Object> rememberCurrent() {
+        flashcards.reviewCurrent(true, notRemembered);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "ok");
+        response.put("action", "remember");
+        return response;
+    }
+
+    @PostMapping("/flashcard/not-remember")
+    public Map<String, Object> notRememberCurrent() {
+        flashcards.reviewCurrent(false, notRemembered);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "ok");
+        response.put("action", "not-remember");
+        return response;
+    }
+
+    @GetMapping("/flashcard/pending")
+    public List<String> getPendingNotRemembered() {
+        return notRemembered.getPending();
     }
 }

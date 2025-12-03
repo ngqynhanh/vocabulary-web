@@ -1,0 +1,17 @@
+{
+  "apple": "A round fruit with red or green skin and a white inside.",
+  "application": "A formal request to an authority for something.",
+  "apricot": "A juicy, soft fruit, resembling a small peach.",
+  "banana": "A long curved fruit which grows in clusters and has soft pulpy flesh and yellow skin when ripe.",
+  "backend": "The part of a software system that is not directly accessed by the user.",
+  "bug": "An error, flaw or fault in a computer program.",
+  "code": "Instructions for a computer, written in a programming language.",
+  "computer": "An electronic device for storing and processing data.",
+  "data": "Facts and statistics collected together for reference or analysis.",
+  "debug": "The process of identifying and removing errors from computer hardware or software.",
+  "frontend": "The part of a software system that is directly accessed by the user.",
+  "java": "A high-level, class-based, object-oriented programming language.",
+  "javascript": "A programming language that is one of the core technologies of the World Wide Web.",
+  "server": "A computer or system that provides resources, data, services, or programs to other computers.",
+  "spring": "A Java framework that makes it easy to create enterprise-grade applications."
+}

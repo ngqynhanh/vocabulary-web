@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Flashcards</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="flashcard-page-body">
+
+    <!-- Top Navigation (Website Nav) -->
+    <nav>
+        <a href="index.html">🔍 Search</a>
+        <a href="flashcards.html" style="color:#a8b1ff;">⚡ Flashcards</a>
+        <a href="history.html">📜 History</a>
+    </nav>
+
+    <!-- Flashcard App Container -->
+    <div class="flashcard-container">
+        
+        <!-- App Header (Matches Image) -->
+        <div style="width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: white;">
+            <div style="font-weight: bold; display: flex; align-items: center; gap: 5px;">
+                <span style="color: #4255ff;">🗂️</span> Study Set <span>▼</span>
+            </div>
+            <div style="text-align: right;">
+                <span id="progress-text" style="font-weight: bold;">1 / ∞</span>
+                <div style="font-size: 0.8rem; color: #a8b1ff;">Smart Dictionary</div>
+            </div>
+        </div>
+
+        <!-- The Card Area -->
+        <div class="flashcard" id="flashcard-area">
+            <!-- Label (Word/Definition) -->
+            <div class="card-label" id="card-label">Front</div>
+
+            <!-- Icons Top Right -->
+            <div class="card-icons">
+                <span title="Edit">✎</span>
+                <span title="Audio">🔊</span>
+                <span title="Star">★</span>
+            </div>
+            
+            <!-- Main Content Text -->
+            <div class="card-content" id="flashcard-content">
+                Loading...
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="controls" style="width: 100%; max-width: 800px; justify-content: space-between;">
+            
+            <!-- Left: Toggle -->
+            <div style="display: flex; align-items: center; gap: 10px; color: #a8b1ff; font-size: 0.9rem;">
+                <div style="width: 30px; height: 16px; background: #586380; border-radius: 10px; position: relative; cursor:pointer;">
+                    <div style="width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px;"></div>
+                </div>
+                <span>Track progress</span>
+            </div>
+
+            <!-- Center: Navigation -->
+            <div style="display: flex; gap: 20px;">
+                <button class="round-btn" onclick="alert('Previous is not supported yet')">←</button>
+                <button class="round-btn" id="next-card-btn">→</button>
+            </div>
+
+            <!-- Right: Extra Actions -->
+            <div style="display: flex; gap: 15px; color: white; font-size: 1.2rem;">
+                <span style="cursor: pointer;">▶</span>
+                <span style="cursor: pointer;">⤢</span>
+            </div>
+
+        </div>
+
+        <p style="margin-top: 20px; color: #586380; font-size: 0.9rem;">
+            Click card to flip • Use arrows to navigate
+        </p>
+
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

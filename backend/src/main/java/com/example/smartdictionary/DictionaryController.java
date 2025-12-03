@@ -20,6 +20,7 @@ public class DictionaryController {
     private final HistoryStack history = new HistoryStack();
     private final FlashcardList flashcards = new FlashcardList();
     private final NotRememberedStack notRemembered = new NotRememberedStack();
+    private final FavoriteWords favorites = new FavoriteWords();
     private Map<String, String> dictionaryData = new HashMap<>();
 
     // Load data when server starts
@@ -117,5 +118,52 @@ public class DictionaryController {
     @GetMapping("/flashcard/pending")
     public List<String> getPendingNotRemembered() {
         return notRemembered.getPending();
+    }
+
+    // Favorites APIs
+    @GetMapping("/favorites")
+    public List<WordItem> listFavorites() {
+        return favorites.list();
+    }
+
+    @GetMapping("/favorites/{word}")
+    public Map<String, Object> getFavorite(@PathVariable String word) {
+        Map<String, Object> response = new HashMap<>();
+        WordItem item = favorites.get(word);
+        response.put("found", item != null);
+        if (item != null) {
+            response.put("word", item.getWord());
+            response.put("definition", item.getDefinition());
+        }
+        return response;
+    }
+
+    @PostMapping("/favorites/{word}")
+    public Map<String, Object> addFavorite(@PathVariable String word) {
+        String key = word.toLowerCase();
+        Map<String, Object> response = new HashMap<>();
+
+        if (!dictionaryData.containsKey(key)) {
+            response.put("status", "error");
+            response.put("message", "Word not found in dictionary");
+            return response;
+        }
+
+        WordItem item = new WordItem(key, dictionaryData.get(key));
+        favorites.add(item);
+        response.put("status", "ok");
+        response.put("favorite", true);
+        response.put("word", item.getWord());
+        return response;
+    }
+
+    @DeleteMapping("/favorites/{word}")
+    public Map<String, Object> removeFavorite(@PathVariable String word) {
+        Map<String, Object> response = new HashMap<>();
+        boolean removed = favorites.remove(word);
+        response.put("status", removed ? "ok" : "not-found");
+        response.put("favorite", false);
+        response.put("word", word.toLowerCase());
+        return response;
     }
 }

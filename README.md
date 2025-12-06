@@ -83,6 +83,12 @@ Backend stack: Spring Boot (Java). Core data structures implemented for trie sea
   - Response (ok): `{ source: "dictionaryapi.dev", word: string, status: "ok", data: any }` (data is parsed JSON from the upstream API)
   - Response (error): `{ source: "dictionaryapi.dev", word: string, status: "error" | "parse-error", error: string }`
 
+### Translate EN → VI
+- `POST /translate?text=<string>`
+  - Params: `text` (query param)
+  - Response (ok): `{ status: "ok", source: "en", target: "vi", text: string, translation: string }`
+  - Response (error): `{ status: "error", error: string }`
+
 ## Data Structures (Backend)
 - `Trie` – prefix search for suggestions
 - `Levenshtein` – closest match suggestion when not found

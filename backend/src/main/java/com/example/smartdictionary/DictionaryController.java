@@ -22,6 +22,7 @@ public class DictionaryController {
     private final NotRememberedStack notRemembered = new NotRememberedStack();
     private final FavoriteWords favorites = new FavoriteWords();
     private final DictionaryApiService dictionaryApi = new DictionaryApiService();
+    private final TranslateService translateService = new TranslateService();
     private Map<String, String> dictionaryData = new HashMap<>();
 
     // Load data when server starts
@@ -119,6 +120,24 @@ public class DictionaryController {
     @GetMapping("/flashcard/pending")
     public List<String> getPendingNotRemembered() {
         return notRemembered.getPending();
+    }
+
+    // Translate EN -> VI
+    @PostMapping("/translate")
+    public Map<String, Object> translate(@RequestParam String text) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("source", "en");
+        result.put("target", "vi");
+        result.put("text", text);
+        String translated = translateService.translateEnToVi(text);
+        if (translated != null) {
+            result.put("status", "ok");
+            result.put("translation", translated);
+        } else {
+            result.put("status", "error");
+            result.put("error", "Translation failed or no response");
+        }
+        return result;
     }
 
     // External Dictionary API (dictionaryapi.dev)

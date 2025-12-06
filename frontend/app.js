@@ -48,6 +48,26 @@ async function handleSearch(word) {
     }
 }
 
+async function handleTranslate(text) {
+    const resultEl = document.getElementById('translate-result');
+    if (!resultEl) return;
+    resultEl.innerHTML = 'Translating...';
+    try {
+        const res = await fetch(`http://localhost:8080/translate?text=${encodeURIComponent(text)}`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            resultEl.innerHTML = `<b>${text}</b><br/>→ ${data.translation}`;
+        } else {
+            resultEl.innerHTML = 'Translation failed.';
+        }
+    } catch (err) {
+        console.error(err);
+        resultEl.innerHTML = 'Error calling translate API.';
+    }
+}
+
 // --- Main Initializer ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("App Initializing...");
@@ -57,6 +77,22 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log("Loading Search Module...");
         setupSearch(handleSearch);
         setupSuggestions(handleSearch);
+    }
+
+    // Translate section
+    const translateInput = document.getElementById('translate-input');
+    const translateBtn = document.getElementById('translate-btn');
+    if (translateInput && translateBtn) {
+        translateBtn.addEventListener('click', () => {
+            const text = translateInput.value.trim();
+            if (text) handleTranslate(text);
+        });
+        translateInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const text = translateInput.value.trim();
+                if (text) handleTranslate(text);
+            }
+        });
     }
 
     // 2. Check if we are on the FLASHCARD page (UPDATED ID)

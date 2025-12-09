@@ -6,75 +6,67 @@
     <title>Smart Flashcards</title>
     <link rel="stylesheet" href="styles.css">
 </head>
-<body class="flashcard-page-body">
+<body class="flashcards-page-body">
 
-    <!-- Top Navigation (Website Nav) -->
     <nav>
-        <a href="index.html">🔍 Search</a>
-        <a href="flashcards.html" style="color:#a8b1ff;">⚡ Flashcards</a>
-        <a href="history.html">📜 History</a>
+        <a href="index.html">Dictionary</a>
+        <a href="flashcards.html" class="nav-flash">Flashcards</a>
+        <a href="history.html">History</a>
+        <a href="translate.html">Translate</a>
     </nav>
 
-    <!-- Flashcard App Container -->
-    <div class="flashcard-container">
+    <div class="flashcard-layout">
         
-        <!-- App Header (Matches Image) -->
-        <div style="width: 100%; max-width: 800px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; color: white;">
-            <div style="font-weight: bold; display: flex; align-items: center; gap: 5px;">
-                <span style="color: #4255ff;">🗂️</span> Study Set <span>▼</span>
-            </div>
-            <div style="text-align: right;">
-                <span id="progress-text" style="font-weight: bold;">1 / ∞</span>
-                <div style="font-size: 0.8rem; color: #a8b1ff;">Smart Dictionary</div>
-            </div>
+        <div class="sidebar">
+            <h3>Your Sets</h3>
+            <button class="set-btn active" id="btn-history">
+                <span><img src="icon/history-icon.png" alt="History" class="icon-img"></span> History
+            </button>
+            <button class="set-btn" id="btn-favorites">
+                <span><img src="icon/star-symbol-icon.png" alt="Favorites" class="icon-img"></span> Favorites
+            </button>
+            <button class="set-btn" id="btn-not-remembered">
+                <span><img src="icon/cross-icon.png" alt="Not Remembered" class="icon-img"></span> Not Remembered
+            </button>
+            
+            <h3>Sample Sets</h3>
+            <button class="set-btn" id="btn-animals">
+                <span><img src="icon/paw-icon.png" alt="Animals" class="icon-img"></span> Animals
+            </button>
+            <button class="set-btn" id="btn-coding">
+                <span><img src="icon/computer-laptop-icon.png" alt="Programming" class="icon-img"></span> Programming
+            </button>
         </div>
 
-        <!-- The Card Area -->
-        <div class="flashcard" id="flashcard-area">
-            <!-- Label (Word/Definition) -->
-            <div class="card-label" id="card-label">Front</div>
-
-            <!-- Icons Top Right -->
-            <div class="card-icons">
-                <span title="Edit">✎</span>
-                <span title="Audio">🔊</span>
-                <span title="Star">★</span>
-            </div>
+        <div class="flashcard-main">
             
-            <!-- Main Content Text -->
-            <div class="card-content" id="flashcard-content">
-                Loading...
-            </div>
-        </div>
-
-        <!-- Bottom Controls -->
-        <div class="controls" style="width: 100%; max-width: 800px; justify-content: space-between;">
-            
-            <!-- Left: Toggle -->
-            <div style="display: flex; align-items: center; gap: 10px; color: #a8b1ff; font-size: 0.9rem;">
-                <div style="width: 30px; height: 16px; background: #586380; border-radius: 10px; position: relative; cursor:pointer;">
-                    <div style="width: 12px; height: 12px; background: white; border-radius: 50%; position: absolute; top: 2px; left: 2px;"></div>
+            <div class="flashcard-header">
+                <div class="set-title">
+                    <span id="set-title-icon"><img src="icon/history-icon.png" alt="History" class="icon-img"></span> 
+                    <span id="set-title-text">History</span>
                 </div>
-                <span>Track progress</span>
+                <span id="card-counter" class="card-counter">1 / 3</span>
             </div>
 
-            <!-- Center: Navigation -->
-            <div style="display: flex; gap: 20px;">
-                <button class="round-btn" onclick="alert('Previous is not supported yet')">←</button>
-                <button class="round-btn" id="next-card-btn">→</button>
+            <div id="flashcard-area">
+                <div class="card-label" id="card-label">TERM</div>
+                <div class="card-icons" id="card-icons">
+                    <span id="favorite-btn" title="Favorite"><img src="icon/star-symbol-icon.png" alt="Favorite" class="icon-img"></span>
+                </div>
+                <div id="flashcard-content">Select a set to start</div>
             </div>
 
-            <!-- Right: Extra Actions -->
-            <div style="display: flex; gap: 15px; color: white; font-size: 1.2rem;">
-                <span style="cursor: pointer;">▶</span>
-                <span style="cursor: pointer;">⤢</span>
+            <div class="controls flashcard-controls">
+                <button class="round-btn secondary" id="prev-btn">←</button>
+                <div class="card-actions">
+                    <button class="action-btn not-remember-btn" id="not-remember-btn" title="Mark as not remembered"><img src="icon/cross-icon.png" alt="Not Remembered" class="icon-img"></button>
+                    <button class="action-btn remember-btn" id="remember-btn" title="Mark as remembered" style="display: none;">✓</button>
+                </div>
+                <button class="round-btn" id="next-btn">→</button>
             </div>
-
+            
+            <p class="hint-text">Click card to flip</p>
         </div>
-
-        <p style="margin-top: 20px; color: #586380; font-size: 0.9rem;">
-            Click card to flip • Use arrows to navigate
-        </p>
 
     </div>
 

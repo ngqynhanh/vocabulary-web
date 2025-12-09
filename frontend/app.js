@@ -2,6 +2,7 @@ import { setupSearch } from './components/searchBox.js';
 import { setupSuggestions } from './components/suggestionBox.js';
 import { updateHistory } from './components/historyList.js';
 import { setupFlashcard } from './components/flashcardUI.js';
+import { setupFlashcardsPage } from './components/flashcardsPage.js';
 
 // --- Shared Logic ---
 const resultBox = document.getElementById('result-box');
@@ -43,8 +44,21 @@ document.addEventListener('DOMContentLoaded', () => {
         setupSuggestions(handleSearch);
     }
 
-    // 2. Check if we are on the FLASHCARD page (UPDATED ID)
-    if (document.getElementById('flashcard-content')) {
+    // 2. Check if we are on the FLASHCARD page (with sidebar layout)
+    // Only initialize if we're actually on the flashcards page
+    const flashcardArea = document.getElementById('flashcard-area');
+    const flashcardLayout = document.querySelector('.flashcard-layout');
+    const flashcardContent = document.getElementById('flashcard-content');
+    const cardCounter = document.getElementById('card-counter');
+    
+    // Only initialize if ALL required elements exist (prevents false positives)
+    if (flashcardArea && flashcardLayout && cardCounter && 
+        flashcardArea.closest('.flashcard-layout') === flashcardLayout) {
+        console.log("Loading Flashcards Page Module...");
+        setupFlashcardsPage();
+    }
+    // 2b. Check if we are on the simple FLASHCARD page (backend-driven)
+    else if (flashcardContent && !flashcardLayout) {
         console.log("Loading Flashcard Module...");
         setupFlashcard();
     }

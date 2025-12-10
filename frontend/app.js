@@ -52,6 +52,7 @@ async function handleSearch(word) {
                 </div>
             `;
             // Try external dictionary API via backend proxy
+            let externalDefinition = null;
             try {
                 const extRes = await fetch(`http://localhost:8080/external/definitions?word=${encodeURIComponent(term)}`);
                 const ext = await extRes.json();
@@ -63,11 +64,33 @@ async function handleSearch(word) {
                         return `<div><b>${m.partOfSpeech || ''}</b><br/>${defs}</div>`;
                     }).join('<hr/>' );
                     msg += `<div style="margin-top:8px;">External definitions:<br/>${defsHtml}</div>`;
+                    
+                    // Extract first definition for favorites
+                    if (entry.meanings && entry.meanings.length > 0) {
+                        const firstDef = entry.meanings[0].definitions && entry.meanings[0].definitions[0];
+                        if (firstDef) {
+                            externalDefinition = firstDef.definition;
+                        }
+                    }
                 } else {
                     msg += `<div style="margin-top:8px; color:#586380;">No external definitions found.</div>`;
                 }
             } catch {}
+            
+            // Add "Add to favorites" button if word not in dictionary
+            msg += `
+                <div style="margin-top:15px;">
+                    <button id="add-unknown-fav-btn" class="btn-primary" style="padding:8px 14px;">
+                        ★ Add to favorites
+                    </button>
+                    <span id="add-unknown-fav-status" style="margin-left:8px; color:#586380; font-size:0.9rem;"></span>
+                </div>
+            `;
+            
             resultBox.innerHTML = msg;
+            
+            // Attach handler for unknown word favorite button
+            attachFavoriteForUnknownWord(term, externalDefinition);
         }
     } catch (err) {
         console.error(err);
@@ -149,6 +172,100 @@ async function attachFavoriteHandlers(word, definition, category) {
             console.error('Favorite toggle failed', err);
         }
     };
+}
+
+function attachFavoriteForUnknownWord(word, externalDefinition) {
+    const btn = document.getElementById('add-unknown-fav-btn');
+    const status = document.getElementById('add-unknown-fav-status');
+    if (!btn || !status) return;
+
+    const showToastMsg = (msg, type) => {
+        const toast = document.createElement('div');
+        toast.textContent = msg;
+        toast.style.cssText = `
+            position: fixed; top: 20px; right: 20px; padding: 15px 20px;
+            background: ${type === 'success' ? '#4caf50' : '#ff9800'};
+            color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10001; font-weight: 600; font-size: 0.95rem;
+            animation: slideIn 0.3s ease-out;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => toast.remove(), 300);
+        }, 2500);
+    };
+
+    const updateLabel = (isFav) => {
+        btn.textContent = isFav ? '★ Remove favorite' : '★ Add to favorites';
+        status.textContent = isFav ? 'Added to favorites' : '';
+        btn.disabled = false;
+    };
+
+    btn.disabled = true;
+    status.textContent = '';
+
+    const checkAndWire = async () => {
+        try {
+            const check = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(word)}`);
+            const checkData = await check.json();
+            updateLabel(checkData.found === true);
+        } catch (err) {
+            console.error('Favorite check failed:', err);
+            btn.disabled = false;
+        }
+
+        btn.onclick = async () => {
+            btn.disabled = true;
+            try {
+                const check = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(word)}`);
+                const checkData = await check.json();
+                const isFav = checkData.found === true;
+                if (isFav) {
+                    const delRes = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(word)}`, { method: 'DELETE' });
+                    if (delRes.ok) {
+                        updateLabel(false);
+                        showToastMsg('Removed from favorites', 'warning');
+                    } else {
+                        btn.disabled = false;
+                    }
+                } else {
+                    // Use external definition if available, otherwise use default
+                    const definition = externalDefinition || `Word from search (no dictionary definition available)`;
+                    const addRes = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(word)}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ definition, category: 'unknown' })
+                    });
+                    if (addRes.ok) {
+                        updateLabel(true);
+                        showToastMsg('✓ Added to favorites', 'success');
+                        // Add to flashcard rotation stack
+                        try {
+                            await fetch('http://localhost:8080/flashcard/add-favorite', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ word: word.toLowerCase(), definition })
+                            });
+                        } catch (err) {
+                            console.error('Failed to add to flashcard stack:', err);
+                        }
+                        // Refresh flashcard favorites if page is open
+                        if (window.flashcardsApp && typeof window.flashcardsApp.refreshFavorites === 'function') {
+                            window.flashcardsApp.refreshFavorites();
+                        }
+                    } else {
+                        btn.disabled = false;
+                    }
+                }
+            } catch (err) {
+                console.error('Favorite toggle failed', err);
+                btn.disabled = false;
+            }
+        };
+    };
+
+    checkAndWire();
 }
 
 // Toast animation styles

@@ -73,8 +73,10 @@ public class DictionaryController {
         String searchWord = word.toLowerCase();
         Map<String, Object> response = new HashMap<>();
 
+        // Always add to history, regardless of whether word is found
+        history.push(searchWord);
+
         if (dictionaryData.containsKey(searchWord)) {
-            history.push(searchWord);
             response.put("found", true);
             response.put("word", searchWord);
             response.put("definition", dictionaryData.get(searchWord));

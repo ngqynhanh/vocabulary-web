@@ -17,8 +17,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class TranslateService {
 
     private static final String TRANSLATE_URL = "https://libretranslate.de/translate";
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient;
     private final ObjectMapper mapper = new ObjectMapper();
+
+    public TranslateService() {
+        this(HttpClient.newHttpClient());
+    }
+
+    // Visible for testing
+    TranslateService(HttpClient client) {
+        this.httpClient = client;
+    }
 
     public String translateEnToVi(String text) {
         if (text == null || text.isBlank()) return null;

@@ -1,11 +1,55 @@
 export function setupFlashcard() {
+    // Helper function to show toast notifications
+    const showNotification = (message, type = 'info') => {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#4caf50' : type === 'warning' ? '#ff9800' : '#2196f3'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            font-weight: 600;
+            font-size: 0.95rem;
+            animation: slideIn 0.3s ease-out;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 2500);
+    };
+    
+    // Add CSS animations for notification
+    if (!document.getElementById('notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     const cardArea = document.getElementById('flashcard-area');
     const contentDiv = document.getElementById('flashcard-content');
     const labelDiv = document.getElementById('card-label');
     const nextBtn = document.getElementById('next-card-btn');
     const rememberBtn = document.getElementById('remember-btn');
-    const notRememberBtn = document.getElementById('notremember-btn');
-    const favoriteStar = document.getElementById('favorite-star');
+    const notRememberBtn = document.getElementById('not-remember-btn');
+    const favoriteStar = document.getElementById('favorite-btn');
     const externalBtn = document.getElementById('load-external-btn');
     const externalDefsDiv = document.getElementById('external-defs');
 
@@ -101,7 +145,23 @@ export function setupFlashcard() {
     notRememberBtn?.addEventListener('click', async (e) => {
         e.stopPropagation();
         try {
+            if (!currentCard) return;
+            
+            // Check if word already in pending stack
+            const pendingRes = await fetch('http://localhost:8080/flashcard/pending');
+            const pendingWords = await pendingRes.json();
+            const alreadyExists = pendingWords.includes(currentCard.word);
+            
+            // Add to not-remembered stack
             await fetch('http://localhost:8080/flashcard/not-remember', { method: 'POST' });
+            
+            // Show notification
+            if (alreadyExists) {
+                showNotification('⚠️ Card already in review stack!', 'warning');
+            } else {
+                showNotification('✓ Card added to review stack', 'success');
+            }
+            
             await loadCurrent();
         } catch (err) { console.error(err); }
     });
@@ -157,44 +217,6 @@ export function setupFlashcard() {
             externalDefsDiv.innerHTML = 'Error loading external definitions.';
         }
     });
-
-    notRememberBtn?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        try {
-            await fetch('http://localhost:8080/flashcard/not-remember', { method: 'POST' });
-            await loadCurrent();
-        } catch (err) { console.error(err); }
-    });
-
-    // 6. Favorites toggle
-    // const updateFavoriteStar = async () => {
-    //     if (!favoriteStar || !currentCard) return;
-    //     try {
-    //         const res = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`);
-    //         const data = await res.json();
-    //         const isFav = data.found === true;
-    //         favoriteStar.style.color = isFav ? '#ffd700' : '#ffffff';
-    //         favoriteStar.title = isFav ? 'Unfavorite' : 'Favorite';
-    //     } catch {}
-    // };
-
-    favoriteStar?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        if (!currentCard) return;
-        try {
-            const checkRes = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`);
-            const check = await checkRes.json();
-            if (check.found) {
-                await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`, { method: 'DELETE' });
-            } else {
-                await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`, { method: 'POST' });
-            }
-            await updateFavoriteStar();
-        } catch (err) { console.error(err); }
-    });
-
-    // 7. External definitions removed - using only JSON data
-    // External definitions feature has been removed
 
     // Load first card immediately
     loadCurrent();

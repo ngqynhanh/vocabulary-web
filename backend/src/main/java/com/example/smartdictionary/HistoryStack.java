@@ -10,9 +10,14 @@ public class HistoryStack {
     private final Stack<String> stack = new Stack<>();
 
     public void push(String word) {
-        // Avoid duplicates at the very top
-        if (stack.isEmpty() || !stack.peek().equals(word)) {
-            stack.push(word);
+        // Remove any existing occurrence to avoid repeated entries in history
+        stack.removeIf(w -> w.equals(word));
+        stack.push(word);
+
+        // Optional: cap history length to avoid unbounded growth
+        int maxSize = 100;
+        while (stack.size() > maxSize) {
+            stack.remove(0); // remove oldest
         }
     }
 

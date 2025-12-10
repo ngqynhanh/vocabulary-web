@@ -65,6 +65,49 @@ export function setupFlashcardsPage() {
     isInitialized = true;
     isActive = true;
 
+    // Toast notifications (shared with flashcards page)
+    const showNotification = (message, type = 'info') => {
+        const notification = document.createElement('div');
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#4caf50' : type === 'warning' ? '#ff9800' : '#2196f3'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10000;
+            font-weight: 600;
+            font-size: 0.95rem;
+            animation: slideIn 0.3s ease-out;
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 2500);
+    };
+
+    if (!document.getElementById('notification-styles')) {
+        const style = document.createElement('style');
+        style.id = 'notification-styles';
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
     // Reset flags when page unloads
     const handleBeforeUnload = () => {
         isActive = false;
@@ -493,6 +536,16 @@ export function setupFlashcardsPage() {
 
         console.log('Marking as not remembered:', card.term);
         try {
+            // Check if card already pending
+            let alreadyExists = false;
+            try {
+                const pendingRes = await fetch('http://localhost:8080/flashcard/pending');
+                const pendingWords = await pendingRes.json();
+                alreadyExists = Array.isArray(pendingWords) && pendingWords.includes(card.term);
+            } catch (checkErr) {
+                console.warn('Pending check failed; proceeding anyway', checkErr);
+            }
+
             // Include definition in body for sample sets
             const res = await fetch(`http://localhost:8080/flashcard/not-remembered/${encodeURIComponent(card.term)}`, { 
                 method: 'POST',
@@ -507,15 +560,26 @@ export function setupFlashcardsPage() {
                 console.error('Failed to mark as not remembered, status:', res.status);
                 const errorData = await res.json().catch(() => ({}));
                 console.error('Error details:', errorData);
+                showNotification('Could not add card to review stack. Please try again.', 'warning');
                 return;
             }
             const result = await res.json();
             console.log('Mark as not remembered result:', result);
+            console.log('Card term:', card.term, 'Already exists:', alreadyExists);
+
+            if (alreadyExists) {
+                showNotification('⚠️ Card already in review stack!', 'warning');
+            } else {
+                showNotification('✓ Card added to review stack', 'success');
+            }
             
             // Reload not-remembered set if we're viewing it
             if (state.currentSet === 'not-remembered') {
                 data['not-remembered'] = await fetchNotRememberedSet();
                 renderCard();
+            } else {
+                // Auto-advance to next card on sample sets
+                nextCard();
             }
         } catch (err) {
             console.error('Failed to mark as not remembered', err);
@@ -839,6 +903,11 @@ export function setupFlashcardsPage() {
             clearHistoryCache();
             if (state.currentSet === 'history') {
                 loadSet('history');
+            }
+        },
+        refreshFavorites: () => {
+            if (state.currentSet === 'favorites') {
+                loadSet('favorites');
             }
         },
         clearHistoryCache,

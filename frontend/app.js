@@ -9,25 +9,51 @@ const resultBox = document.getElementById('result-box');
 
 async function handleSearch(word) {
     if (!resultBox) return; 
+    const term = (word || '').trim();
+    if (!term) {
+        resultBox.innerHTML = '<p>Please enter a word to search.</p>';
+        return;
+    }
+
     resultBox.innerHTML = '<p>Searching...</p>';
     
     try {
-        const res = await fetch(`http://localhost:8080/search?word=${word}`);
+        const res = await fetch(`http://localhost:8080/search?word=${encodeURIComponent(term)}`);
         const data = await res.json();
 
         if (data.found) {
+            const definition = data.definition || 'No definition available';
             resultBox.innerHTML = `
                 <h2 style="text-transform: capitalize;">${data.word}</h2>
-                <p>${data.definition}</p>
+                <p>${definition}</p>
+                <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
+                    <button id="fav-btn" class="btn-primary" style="padding:8px 14px;">★ Save favorite</button>
+                    <span id="fav-status" style="color:#586380; font-size:0.9rem;"></span>
+                </div>
             `;
+            attachFavoriteHandlers(data.word, definition, 'search');
         } else {
-            let msg = `<p style="color:red;">Not found.</p>`;
+            let msg = `<p style="color:red;">Word not found in dictionary.</p>`;
             if (data.correction) {
                 msg += `<p>Did you mean: <b>${data.correction}</b>?</p>`;
             }
+            // Add button to navigate to translate page (only if term is non-empty)
+            msg += `
+                <div style="margin-top: 15px;">
+                    <button 
+                        onclick="window.location.href='translate.html?text=${encodeURIComponent(term)}'" 
+                        style="padding: 10px 20px; background: #4285f4; color: white; border: none; 
+                               border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.95rem;
+                               transition: all 0.2s;"
+                        onmouseover="this.style.background='#3367d6'"
+                        onmouseout="this.style.background='#4285f4'">
+                        📝 Translate "${term}"
+                    </button>
+                </div>
+            `;
             // Try external dictionary API via backend proxy
             try {
-                const extRes = await fetch(`http://localhost:8080/external/definitions?word=${encodeURIComponent(word)}`);
+                const extRes = await fetch(`http://localhost:8080/external/definitions?word=${encodeURIComponent(term)}`);
                 const ext = await extRes.json();
                 if (ext.status === 'ok' && Array.isArray(ext.data) && ext.data.length > 0) {
                     const entry = ext.data[0];
@@ -60,6 +86,7 @@ async function handleTranslate(text) {
         const data = await res.json();
         if (data.status === 'ok') {
             resultEl.innerHTML = `<b>${text}</b><br/>→ ${data.translation}`;
+            attachFavoriteButtonForTranslate(text, data.translation);
         } else {
             resultEl.innerHTML = `<p style="color:red;">Translation failed.</p><p style="color:#586380; font-size:0.85rem;">${data.error || 'Unknown error'}</p>`;
             console.error('Translation API error:', data);
@@ -71,6 +98,70 @@ async function handleTranslate(text) {
 }
 
 // --- Main Initializer ---
+// --- Favorites helpers ---
+async function attachFavoriteHandlers(word, definition, category) {
+    const btn = document.getElementById('fav-btn');
+    const status = document.getElementById('fav-status');
+    if (!btn || !status) return;
+
+    const updateLabel = (isFav) => {
+        btn.textContent = isFav ? '★ Remove favorite' : '★ Save favorite';
+        status.textContent = isFav ? 'Saved to favorites' : '';
+    };
+
+    try {
+        const check = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(word)}`);
+        const checkData = await check.json();
+        updateLabel(checkData.found === true);
+    } catch {}
+
+    btn.onclick = async () => {
+        try {
+            const check = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(word)}`);
+            const checkData = await check.json();
+            const isFav = checkData.found === true;
+            if (isFav) {
+                await fetch(`http://localhost:8080/favorites/${encodeURIComponent(word)}`, { method: 'DELETE' });
+                updateLabel(false);
+            } else {
+                await fetch(`http://localhost:8080/favorites/${encodeURIComponent(word)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ definition, category })
+                });
+                updateLabel(true);
+                // Add to flashcard rotation stack
+                try {
+                    await fetch('http://localhost:8080/flashcard/add-favorite', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ word: word.toLowerCase(), definition })
+                    });
+                } catch (err) {
+                    console.error('Failed to add favorite to flashcard stack:', err);
+                }
+                // Refresh flashcard favorites if page is open
+                if (window.flashcardsApp && typeof window.flashcardsApp.refreshFavorites === 'function') {
+                    window.flashcardsApp.refreshFavorites();
+                }
+            }
+        } catch (err) {
+            console.error('Favorite toggle failed', err);
+        }
+    };
+}
+
+// Toast animation styles
+if (!document.getElementById('toast-styles')) {
+    const style = document.createElement('style');
+    style.id = 'toast-styles';
+    style.textContent = `
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+    `;
+    document.head.appendChild(style);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log("App Initializing...");
 

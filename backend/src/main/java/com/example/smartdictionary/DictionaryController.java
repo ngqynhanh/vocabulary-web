@@ -339,4 +339,29 @@ public class DictionaryController {
         response.put("word", word.toLowerCase());
         return response;
     }
+
+    @PostMapping("/flashcard/add-favorite")
+    public Map<String, Object> addFavoriteToFlashcard(@RequestBody Map<String, String> body) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String word = body.getOrDefault("word", "").toLowerCase();
+            String definition = body.getOrDefault("definition", "No definition available");
+
+            if (word.isEmpty()) {
+                response.put("status", "error");
+                response.put("message", "Word is required");
+                return response;
+            }
+
+            flashcards.add(word, definition);
+
+            response.put("status", "ok");
+            response.put("message", "Added to flashcard list");
+            response.put("word", word);
+        } catch (Exception e) {
+            response.put("status", "error");
+            response.put("message", "Error: " + e.getMessage());
+        }
+        return response;
+    }
 }

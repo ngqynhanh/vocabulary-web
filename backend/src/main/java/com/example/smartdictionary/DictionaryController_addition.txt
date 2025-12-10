@@ -1,0 +1,23 @@
+Add this method before the closing brace of DictionaryController class:
+
+    // Add favorite to flashcard stack
+    @PostMapping("/flashcard/add-favorite")
+    public Map<String, Object> addFavoriteToFlashcard(@RequestBody(required = true) Map<String, String> body) {
+        Map<String, Object> response = new HashMap<>();
+        String word = body.getOrDefault("word", "").toLowerCase();
+        String definition = body.getOrDefault("definition", "No definition available");
+        
+        if (word.isEmpty()) {
+            response.put("status", "error");
+            response.put("message", "Word is required");
+            return response;
+        }
+        
+        // Add to flashcard list so it appears in the rotation
+        flashcards.add(word, definition);
+        
+        response.put("status", "ok");
+        response.put("message", "Added to flashcard list");
+        response.put("word", word);
+        return response;
+    }

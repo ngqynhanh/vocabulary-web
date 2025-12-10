@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Flashcards</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="flashcards-page-body">
+
+    <nav>
+        <a href="index.html">Dictionary</a>
+        <a href="flashcards.html" class="nav-flash">Flashcards</a>
+        <a href="history.html">History</a>
+        <a href="translate.html">Translate</a>
+    </nav>
+
+    <div class="flashcard-layout">
+        
+        <div class="sidebar">
+            <h3>Your Sets</h3>
+            <button class="set-btn active" id="btn-history">
+                <span><img src="icon/history-icon.png" alt="History" class="icon-img"></span> History
+            </button>
+            <button class="set-btn" id="btn-favorites">
+                <span><img src="icon/star-symbol-icon.png" alt="Favorites" class="icon-img"></span> Favorites
+            </button>
+            <button class="set-btn" id="btn-not-remembered">
+                <span><img src="icon/cross-icon.png" alt="Not Remembered" class="icon-img"></span> Not Remembered
+            </button>
+            
+            <h3>Sample Sets</h3>
+            <button class="set-btn" id="btn-animals">
+                <span><img src="icon/paw-icon.png" alt="Animals" class="icon-img"></span> Animals
+            </button>
+            <button class="set-btn" id="btn-coding">
+                <span><img src="icon/laptop-open-black-icon.png" alt="Programming" class="icon-img"></span> Programming
+            </button>
+        </div>
+
+        <div class="flashcard-main">
+            
+            <div class="flashcard-header">
+                <div class="set-title">
+                    <span id="set-title-icon"><img src="icon/history-icon.png" alt="History" class="icon-img"></span> 
+                    <span id="set-title-text">History</span>
+                </div>
+                <span id="card-counter" class="card-counter">1 / 3</span>
+            </div>
+
+            <div id="flashcard-area">
+                <div class="card-label" id="card-label">TERM</div>
+                <div class="card-icons" id="card-icons">
+                    <span id="favorite-btn" title="Favorite"><img src="icon/star-black-icon.png" alt="Not favorite" class="icon-img"></span>
+                </div>
+                <div id="flashcard-content">Select a set to start</div>
+            </div>
+
+            <div class="controls flashcard-controls">
+                <button class="round-btn secondary" id="prev-btn"><img src="icon/angle-left-icon.png" alt="Previous" class="icon-img"></button>
+                <div class="card-actions">
+                    <button class="action-btn not-remember-btn" id="not-remember-btn" title="Mark as not remembered"><img src="icon/cross-icon.png" alt="Not Remembered" class="icon-img"></button>
+                    <button class="action-btn remember-btn" id="remember-btn" title="Mark as remembered"><img src="icon/small-check-mark-icon.png" alt="Remembered" class="icon-img"></button>
+                </div>
+                <button class="round-btn" id="next-btn"><img src="icon/angle-right-icon.png" alt="Next" class="icon-img"></button>
+            </div>
+            
+            <p class="hint-text">Click card to flip</p>
+        </div>
+
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

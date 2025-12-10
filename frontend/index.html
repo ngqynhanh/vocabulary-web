@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Dictionary</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav>
+        <a href="index.html" style="color:white; border-bottom: 2px solid #4285f4;">Dictionary</a>
+        <a href="flashcards.html">Flashcards</a>
+        <a href="history.html">History</a>
+        <a href="translate.html">Translate</a>
+    </nav>
+
+    <!-- Hero Section (Dark Blue Background) -->
+    <div class="hero-section">
+        <h1 class="hero-title">Look up a word, learn it forever.</h1>
+        
+        <div class="search-wrapper">
+            <input type="text" id="search-input" placeholder="Start typing to look up a word..." autocomplete="off">
+            <div id="suggestion-box" class="suggestions"></div>
+            <!-- Hidden button for JS compatibility -->
+            <button id="search-btn">Search</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div id="result-box">
+            <!-- Default Content -->
+            <div style="text-align: center; color: #777; padding-top: 40px;">
+                <h3 style="color:#0B162A;">Welcome to your Smart Dictionary</h3>
+                <p>Type a word above to see definitions, examples, and more.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

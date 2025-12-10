@@ -31,6 +31,14 @@ public class NotRememberedStack {
     }
 
     /**
+     * Remove a specific word from the stack.
+     */
+    public boolean remove(String word) {
+        if (word == null || word.isEmpty()) return false;
+        return stack.removeIf(w -> w.equals(word));
+    }
+
+    /**
      * Clears the stack after re-study.
      */
     public void clear() {

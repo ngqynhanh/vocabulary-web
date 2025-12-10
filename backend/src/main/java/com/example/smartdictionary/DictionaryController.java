@@ -7,6 +7,7 @@ import org.springframework.core.io.ClassPathResource;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,11 @@ public class DictionaryController {
     private final DictionaryApiService dictionaryApi = new DictionaryApiService();
     private final TranslateService translateService = new TranslateService();
     private Map<String, String> dictionaryData = new HashMap<>();
+    // Store definitions for words not in dictionary (e.g., sample sets)
+    private final Map<String, String> sampleSetDefinitions = new HashMap<>();
+    // Sample sets loaded from JSON resources
+    private List<Map<String, String>> animalSet = new ArrayList<>();
+    private List<Map<String, String>> codingSet = new ArrayList<>();
 
     // Load data when server starts
     @PostConstruct
@@ -42,6 +48,19 @@ public class DictionaryController {
                 flashcards.add(entry.getKey(), entry.getValue());
             }
             System.out.println("Dictionary loaded successfully!");
+
+            // Load sample sets from resources
+            animalSet = mapper.readValue(
+                new ClassPathResource("animal.json").getInputStream(),
+                new TypeReference<List<Map<String, String>>>() {}
+            );
+            codingSet = mapper.readValue(
+                new ClassPathResource("coding.json").getInputStream(),
+                new TypeReference<List<Map<String, String>>>() {}
+            );
+            // Keep definitions available for not-remembered lookups
+            addSampleDefinitions(animalSet);
+            addSampleDefinitions(codingSet);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -137,6 +156,16 @@ public class DictionaryController {
             result.put("status", "error");
             String detail = translateService.getLastError();
             result.put("error", detail != null ? detail : "Translation service unavailable or API error. Check backend logs.");
+    // Get favorites as flashcard set
+    @GetMapping("/flashcard/favorites")
+    public List<Map<String, String>> getFavoriteFlashcards() {
+        List<WordItem> favoriteItems = favorites.list();
+        List<Map<String, String>> result = new ArrayList<>();
+        for (WordItem item : favoriteItems) {
+            Map<String, String> card = new HashMap<>();
+            card.put("word", item.getWord());
+            card.put("definition", item.getDefinition());
+            result.add(card);
         }
         return result;
     }
@@ -161,9 +190,93 @@ public class DictionaryController {
         } else {
             result.put("status", "error");
             result.put("error", "No response or non-2xx status");
+    // Get not-remembered words as flashcard set (with definitions)
+    @GetMapping("/flashcard/not-remembered")
+    public List<Map<String, String>> getNotRememberedFlashcards() {
+        List<String> words = notRemembered.getPending();
+        List<Map<String, String>> result = new ArrayList<>();
+        for (String word : words) {
+            Map<String, String> card = new HashMap<>();
+            card.put("word", word);
+            // Get definition from dictionary, sample set definitions, or use placeholder
+            if (dictionaryData.containsKey(word)) {
+                card.put("definition", dictionaryData.get(word));
+            } else if (sampleSetDefinitions.containsKey(word)) {
+                card.put("definition", sampleSetDefinitions.get(word));
+            } else {
+                card.put("definition", "Definition not available");
+            }
+            result.add(card);
         }
         return result;
     }
+
+    // Mark a not-remembered word as remembered (remove from stack)
+    @PostMapping("/flashcard/not-remembered/{word}/remember")
+    public Map<String, Object> markNotRememberedAsRemembered(@PathVariable String word) {
+        Map<String, Object> response = new HashMap<>();
+        String key = word.toLowerCase();
+        
+        // Remove from not-remembered stack
+        boolean removed = notRemembered.remove(key);
+        
+        // Also remove from sample set definitions if it was stored there
+        if (removed) {
+            sampleSetDefinitions.remove(key);
+        }
+        
+        response.put("status", removed ? "ok" : "not-found");
+        response.put("message", removed ? "Word marked as remembered" : "Word not found in not-remembered list");
+        response.put("word", key);
+        return response;
+    }
+
+    // Mark a word as not remembered (add to stack)
+    // Accepts optional definition in request body for words not in dictionary (e.g., sample sets)
+    @PostMapping("/flashcard/not-remembered/{word}")
+    public Map<String, Object> markAsNotRemembered(@PathVariable String word, 
+                                                   @RequestBody(required = false) Map<String, String> body) {
+        Map<String, Object> response = new HashMap<>();
+        String key = word.toLowerCase();
+        
+        // Allow any word to be marked as not remembered, even if not in dictionary
+        // This enables sample sets (animals, coding) to work
+        notRemembered.push(key);
+        
+        // Store definition if provided (for sample sets)
+        if (body != null && body.containsKey("definition") && !dictionaryData.containsKey(key)) {
+            sampleSetDefinitions.put(key, body.get("definition"));
+        }
+        
+        response.put("status", "ok");
+        response.put("message", "Word added to not-remembered list");
+        response.put("word", key);
+        return response;
+    }
+
+    // Sample set endpoints
+    @GetMapping("/flashcard/sample/animals")
+    public List<Map<String, String>> getAnimalSet() {
+        return animalSet;
+    }
+
+    @GetMapping("/flashcard/sample/coding")
+    public List<Map<String, String>> getCodingSet() {
+        return codingSet;
+    }
+
+    private void addSampleDefinitions(List<Map<String, String>> sampleSet) {
+        if (sampleSet == null) return;
+        for (Map<String, String> item : sampleSet) {
+            String word = item.getOrDefault("word", "").toLowerCase();
+            String definition = item.getOrDefault("definition", "");
+            if (!word.isEmpty() && !definition.isEmpty()) {
+                sampleSetDefinitions.put(word, definition);
+            }
+        }
+    }
+
+    // External Dictionary API endpoint removed - using only JSON data
 
     // Favorites APIs
     @GetMapping("/favorites")
@@ -195,6 +308,24 @@ public class DictionaryController {
         }
 
         WordItem item = new WordItem(key, dictionaryData.get(key));
+    public Map<String, Object> addFavorite(@PathVariable String word,
+                                          @RequestBody(required = false) Map<String, String> body) {
+        String key = word.toLowerCase();
+        Map<String, Object> response = new HashMap<>();
+
+        // Get definition from dictionary or from request body (for sample sets)
+        String definition;
+        if (dictionaryData.containsKey(key)) {
+            definition = dictionaryData.get(key);
+        } else if (body != null && body.containsKey("definition")) {
+            // Allow favoriting words from sample sets with their definitions
+            definition = body.get("definition");
+        } else {
+            // If not in dictionary and no definition provided, use a default
+            definition = "No definition available";
+        }
+
+        WordItem item = new WordItem(key, definition);
         favorites.add(item);
         response.put("status", "ok");
         response.put("favorite", true);
@@ -209,6 +340,65 @@ public class DictionaryController {
         response.put("status", removed ? "ok" : "not-found");
         response.put("favorite", false);
         response.put("word", word.toLowerCase());
+        return response;
+    }
+
+    // Translation API
+    @PostMapping("/translate")
+    public Map<String, Object> translate(@RequestBody Map<String, String> request) {
+        Map<String, Object> response = new HashMap<>();
+        
+        String text = request.get("text");
+        String sourceLang = request.getOrDefault("sourceLang", "en");
+        String targetLang = request.getOrDefault("targetLang", "es");
+        
+        if (text == null || text.isBlank()) {
+            response.put("status", "error");
+            response.put("message", "Text is required");
+            return response;
+        }
+        
+        String translated = translationService.translate(text, sourceLang, targetLang);
+        
+        if (translated != null) {
+            response.put("status", "ok");
+            response.put("originalText", text);
+            response.put("translatedText", translated);
+            response.put("sourceLang", sourceLang);
+            response.put("targetLang", targetLang);
+        } else {
+            response.put("status", "error");
+            response.put("message", "Translation failed");
+        }
+        
+        return response;
+    }
+
+    @GetMapping("/translate")
+    public Map<String, Object> translateGet(@RequestParam String text,
+                                           @RequestParam(defaultValue = "en") String sourceLang,
+                                           @RequestParam(defaultValue = "es") String targetLang) {
+        Map<String, Object> response = new HashMap<>();
+        
+        if (text == null || text.isBlank()) {
+            response.put("status", "error");
+            response.put("message", "Text is required");
+            return response;
+        }
+        
+        String translated = translationService.translate(text, sourceLang, targetLang);
+        
+        if (translated != null) {
+            response.put("status", "ok");
+            response.put("originalText", text);
+            response.put("translatedText", translated);
+            response.put("sourceLang", sourceLang);
+            response.put("targetLang", targetLang);
+        } else {
+            response.put("status", "error");
+            response.put("message", "Translation failed");
+        }
+        
         return response;
     }
 }

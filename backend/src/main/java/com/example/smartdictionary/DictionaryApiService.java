@@ -2,9 +2,11 @@ package com.example.smartdictionary;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 
 public class DictionaryApiService {
 
@@ -17,7 +19,8 @@ public class DictionaryApiService {
      */
     public String fetchRawJson(String word) {
         if (word == null || word.isBlank()) return null;
-        String url = BASE_URL + word.toLowerCase();
+        String encoded = URLEncoder.encode(word.toLowerCase(), StandardCharsets.UTF_8);
+        String url = BASE_URL + encoded;
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .GET()

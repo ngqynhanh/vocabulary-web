@@ -156,6 +156,10 @@ public class DictionaryController {
             result.put("status", "error");
             String detail = translateService.getLastError();
             result.put("error", detail != null ? detail : "Translation service unavailable or API error. Check backend logs.");
+        }
+        return result;
+    }
+
     // Get favorites as flashcard set
     @GetMapping("/flashcard/favorites")
     public List<Map<String, String>> getFavoriteFlashcards() {
@@ -190,6 +194,10 @@ public class DictionaryController {
         } else {
             result.put("status", "error");
             result.put("error", "No response or non-2xx status");
+        }
+        return result;
+    }
+
     // Get not-remembered words as flashcard set (with definitions)
     @GetMapping("/flashcard/not-remembered")
     public List<Map<String, String>> getNotRememberedFlashcards() {
@@ -297,17 +305,6 @@ public class DictionaryController {
     }
 
     @PostMapping("/favorites/{word}")
-    public Map<String, Object> addFavorite(@PathVariable String word) {
-        String key = word.toLowerCase();
-        Map<String, Object> response = new HashMap<>();
-
-        if (!dictionaryData.containsKey(key)) {
-            response.put("status", "error");
-            response.put("message", "Word not found in dictionary");
-            return response;
-        }
-
-        WordItem item = new WordItem(key, dictionaryData.get(key));
     public Map<String, Object> addFavorite(@PathVariable String word,
                                           @RequestBody(required = false) Map<String, String> body) {
         String key = word.toLowerCase();
@@ -340,65 +337,6 @@ public class DictionaryController {
         response.put("status", removed ? "ok" : "not-found");
         response.put("favorite", false);
         response.put("word", word.toLowerCase());
-        return response;
-    }
-
-    // Translation API
-    @PostMapping("/translate")
-    public Map<String, Object> translate(@RequestBody Map<String, String> request) {
-        Map<String, Object> response = new HashMap<>();
-        
-        String text = request.get("text");
-        String sourceLang = request.getOrDefault("sourceLang", "en");
-        String targetLang = request.getOrDefault("targetLang", "es");
-        
-        if (text == null || text.isBlank()) {
-            response.put("status", "error");
-            response.put("message", "Text is required");
-            return response;
-        }
-        
-        String translated = translationService.translate(text, sourceLang, targetLang);
-        
-        if (translated != null) {
-            response.put("status", "ok");
-            response.put("originalText", text);
-            response.put("translatedText", translated);
-            response.put("sourceLang", sourceLang);
-            response.put("targetLang", targetLang);
-        } else {
-            response.put("status", "error");
-            response.put("message", "Translation failed");
-        }
-        
-        return response;
-    }
-
-    @GetMapping("/translate")
-    public Map<String, Object> translateGet(@RequestParam String text,
-                                           @RequestParam(defaultValue = "en") String sourceLang,
-                                           @RequestParam(defaultValue = "es") String targetLang) {
-        Map<String, Object> response = new HashMap<>();
-        
-        if (text == null || text.isBlank()) {
-            response.put("status", "error");
-            response.put("message", "Text is required");
-            return response;
-        }
-        
-        String translated = translationService.translate(text, sourceLang, targetLang);
-        
-        if (translated != null) {
-            response.put("status", "ok");
-            response.put("originalText", text);
-            response.put("translatedText", translated);
-            response.put("sourceLang", sourceLang);
-            response.put("targetLang", targetLang);
-        } else {
-            response.put("status", "error");
-            response.put("message", "Translation failed");
-        }
-        
         return response;
     }
 }

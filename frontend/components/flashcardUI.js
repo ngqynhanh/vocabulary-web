@@ -167,16 +167,16 @@ export function setupFlashcard() {
     });
 
     // 6. Favorites toggle
-    const updateFavoriteStar = async () => {
-        if (!favoriteStar || !currentCard) return;
-        try {
-            const res = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`);
-            const data = await res.json();
-            const isFav = data.found === true;
-            favoriteStar.style.color = isFav ? '#ffd700' : '#ffffff';
-            favoriteStar.title = isFav ? 'Unfavorite' : 'Favorite';
-        } catch {}
-    };
+    // const updateFavoriteStar = async () => {
+    //     if (!favoriteStar || !currentCard) return;
+    //     try {
+    //         const res = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`);
+    //         const data = await res.json();
+    //         const isFav = data.found === true;
+    //         favoriteStar.style.color = isFav ? '#ffd700' : '#ffffff';
+    //         favoriteStar.title = isFav ? 'Unfavorite' : 'Favorite';
+    //     } catch {}
+    // };
 
     favoriteStar?.addEventListener('click', async (e) => {
         e.stopPropagation();

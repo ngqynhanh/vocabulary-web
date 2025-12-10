@@ -22,7 +22,8 @@ public class DictionaryController {
     private final FlashcardList flashcards = new FlashcardList();
     private final NotRememberedStack notRemembered = new NotRememberedStack();
     private final FavoriteWords favorites = new FavoriteWords();
-    private final TranslateService translationService = new TranslateService();
+    private final DictionaryApiService dictionaryApi = new DictionaryApiService();
+    private final TranslateService translateService = new TranslateService();
     private Map<String, String> dictionaryData = new HashMap<>();
     // Store definitions for words not in dictionary (e.g., sample sets)
     private final Map<String, String> sampleSetDefinitions = new HashMap<>();
@@ -140,6 +141,21 @@ public class DictionaryController {
         return notRemembered.getPending();
     }
 
+    // Translate EN -> VI
+    @PostMapping("/translate")
+    public Map<String, Object> translate(@RequestParam String text) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("source", "en");
+        result.put("target", "vi");
+        result.put("text", text);
+        String translated = translateService.translateEnToVi(text);
+        if (translated != null) {
+            result.put("status", "ok");
+            result.put("translation", translated);
+        } else {
+            result.put("status", "error");
+            String detail = translateService.getLastError();
+            result.put("error", detail != null ? detail : "Translation service unavailable or API error. Check backend logs.");
     // Get favorites as flashcard set
     @GetMapping("/flashcard/favorites")
     public List<Map<String, String>> getFavoriteFlashcards() {
@@ -154,6 +170,26 @@ public class DictionaryController {
         return result;
     }
 
+    // External Dictionary API (dictionaryapi.dev)
+    @GetMapping("/external/definitions")
+    public Map<String, Object> getExternalDefinitions(@RequestParam String word) {
+        Map<String, Object> result = new HashMap<>();
+        String json = dictionaryApi.fetchRawJson(word);
+        result.put("source", "dictionaryapi.dev");
+        result.put("word", word.toLowerCase());
+        if (json != null) {
+            result.put("status", "ok");
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                Object parsed = mapper.readValue(json, Object.class);
+                result.put("data", parsed);
+            } catch (IOException e) {
+                result.put("status", "parse-error");
+                result.put("error", "Failed to parse API response");
+            }
+        } else {
+            result.put("status", "error");
+            result.put("error", "No response or non-2xx status");
     // Get not-remembered words as flashcard set (with definitions)
     @GetMapping("/flashcard/not-remembered")
     public List<Map<String, String>> getNotRememberedFlashcards() {
@@ -261,6 +297,17 @@ public class DictionaryController {
     }
 
     @PostMapping("/favorites/{word}")
+    public Map<String, Object> addFavorite(@PathVariable String word) {
+        String key = word.toLowerCase();
+        Map<String, Object> response = new HashMap<>();
+
+        if (!dictionaryData.containsKey(key)) {
+            response.put("status", "error");
+            response.put("message", "Word not found in dictionary");
+            return response;
+        }
+
+        WordItem item = new WordItem(key, dictionaryData.get(key));
     public Map<String, Object> addFavorite(@PathVariable String word,
                                           @RequestBody(required = false) Map<String, String> body) {
         String key = word.toLowerCase();

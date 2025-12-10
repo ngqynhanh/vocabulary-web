@@ -133,6 +133,66 @@ export function setupFlashcard() {
         } catch (err) { console.error(err); }
     });
 
+    // 7. External definitions for current card
+    externalBtn?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!currentCard) return;
+        externalDefsDiv.innerHTML = 'Loading external definitions...';
+        try {
+            const res = await fetch(`http://localhost:8080/external/definitions?word=${encodeURIComponent(currentCard.word)}`);
+            const data = await res.json();
+            if (data.status === 'ok' && Array.isArray(data.data) && data.data.length > 0) {
+                const entry = data.data[0];
+                const meanings = (entry.meanings || []).slice(0, 3);
+                const html = meanings.map(m => {
+                    const defs = (m.definitions || []).slice(0, 2).map(d => `• ${d.definition}`).join('<br/>');
+                    return `<div><b>${m.partOfSpeech || ''}</b><br/>${defs}</div>`;
+                }).join('<hr style="border-color:#586380;"/>');
+                externalDefsDiv.innerHTML = html || 'No definitions available.';
+            } else {
+                externalDefsDiv.innerHTML = 'No external data found.';
+            }
+        } catch (err) {
+            console.error(err);
+            externalDefsDiv.innerHTML = 'Error loading external definitions.';
+        }
+    });
+
+    notRememberBtn?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        try {
+            await fetch('http://localhost:8080/flashcard/not-remember', { method: 'POST' });
+            await loadCurrent();
+        } catch (err) { console.error(err); }
+    });
+
+    // 6. Favorites toggle
+    const updateFavoriteStar = async () => {
+        if (!favoriteStar || !currentCard) return;
+        try {
+            const res = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`);
+            const data = await res.json();
+            const isFav = data.found === true;
+            favoriteStar.style.color = isFav ? '#ffd700' : '#ffffff';
+            favoriteStar.title = isFav ? 'Unfavorite' : 'Favorite';
+        } catch {}
+    };
+
+    favoriteStar?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (!currentCard) return;
+        try {
+            const checkRes = await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`);
+            const check = await checkRes.json();
+            if (check.found) {
+                await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`, { method: 'DELETE' });
+            } else {
+                await fetch(`http://localhost:8080/favorites/${encodeURIComponent(currentCard.word)}`, { method: 'POST' });
+            }
+            await updateFavoriteStar();
+        } catch (err) { console.error(err); }
+    });
+
     // 7. External definitions removed - using only JSON data
     // External definitions feature has been removed
 

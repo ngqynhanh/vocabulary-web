@@ -25,11 +25,48 @@ async function handleSearch(word) {
             if (data.correction) {
                 msg += `<p>Did you mean: <b>${data.correction}</b>?</p>`;
             }
+            // Try external dictionary API via backend proxy
+            try {
+                const extRes = await fetch(`http://localhost:8080/external/definitions?word=${encodeURIComponent(word)}`);
+                const ext = await extRes.json();
+                if (ext.status === 'ok' && Array.isArray(ext.data) && ext.data.length > 0) {
+                    const entry = ext.data[0];
+                    const meanings = (entry.meanings || []).slice(0, 3);
+                    const defsHtml = meanings.map(m => {
+                        const defs = (m.definitions || []).slice(0, 2).map(d => `• ${d.definition}`).join('<br/>');
+                        return `<div><b>${m.partOfSpeech || ''}</b><br/>${defs}</div>`;
+                    }).join('<hr/>' );
+                    msg += `<div style="margin-top:8px;">External definitions:<br/>${defsHtml}</div>`;
+                } else {
+                    msg += `<div style="margin-top:8px; color:#586380;">No external definitions found.</div>`;
+                }
+            } catch {}
             resultBox.innerHTML = msg;
         }
     } catch (err) {
         console.error(err);
         resultBox.innerHTML = `<p>Error connecting to backend.</p>`;
+    }
+}
+
+async function handleTranslate(text) {
+    const resultEl = document.getElementById('translate-result');
+    if (!resultEl) return;
+    resultEl.innerHTML = 'Translating...';
+    try {
+        const res = await fetch(`http://localhost:8080/translate?text=${encodeURIComponent(text)}`, {
+            method: 'POST'
+        });
+        const data = await res.json();
+        if (data.status === 'ok') {
+            resultEl.innerHTML = `<b>${text}</b><br/>→ ${data.translation}`;
+        } else {
+            resultEl.innerHTML = `<p style="color:red;">Translation failed.</p><p style="color:#586380; font-size:0.85rem;">${data.error || 'Unknown error'}</p>`;
+            console.error('Translation API error:', data);
+        }
+    } catch (err) {
+        console.error(err);
+        resultEl.innerHTML = 'Error calling translate API. Backend may be down.';
     }
 }
 

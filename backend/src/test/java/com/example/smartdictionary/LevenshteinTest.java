@@ -35,9 +35,16 @@ class LevenshteinTest {
     }
 
     @Test
+    void findClosest_autocorrectZibraToZebra() {
+        Set<String> dict = Set.of("apple", "banana", "zebra");
+        // "zibra" distance 1 from "zebra" (one substitution: i->e), within threshold
+        assertEquals("zebra", Levenshtein.findClosest("zibra", dict));
+    }
+
+    @Test
     void findClosest_returnsNullWhenTooFar() {
         Set<String> dict = Set.of("apple", "banana", "carrot");
-        // distance from "zebra" to each is > 2, threshold should return null
-        assertNull(Levenshtein.findClosest("zebra", dict));
+        // distance from "xyz" to each is > 2, threshold should return null
+        assertNull(Levenshtein.findClosest("xyz", dict));
     }
 }

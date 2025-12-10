@@ -135,7 +135,8 @@ public class DictionaryController {
             result.put("translation", translated);
         } else {
             result.put("status", "error");
-            result.put("error", "Translation failed or no response");
+            String detail = translateService.getLastError();
+            result.put("error", detail != null ? detail : "Translation service unavailable or API error. Check backend logs.");
         }
         return result;
     }

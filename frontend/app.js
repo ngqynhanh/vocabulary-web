@@ -60,11 +60,12 @@ async function handleTranslate(text) {
         if (data.status === 'ok') {
             resultEl.innerHTML = `<b>${text}</b><br/>→ ${data.translation}`;
         } else {
-            resultEl.innerHTML = 'Translation failed.';
+            resultEl.innerHTML = `<p style="color:red;">Translation failed.</p><p style="color:#586380; font-size:0.85rem;">${data.error || 'Unknown error'}</p>`;
+            console.error('Translation API error:', data);
         }
     } catch (err) {
         console.error(err);
-        resultEl.innerHTML = 'Error calling translate API.';
+        resultEl.innerHTML = 'Error calling translate API. Backend may be down.';
     }
 }
 

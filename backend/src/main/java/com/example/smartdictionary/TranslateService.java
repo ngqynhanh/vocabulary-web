@@ -1,55 +1,81 @@
 package com.example.smartdictionary;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+
 /**
- * Simple EN->VI translation via LibreTranslate public endpoint.
- * Endpoint: https://libretranslate.de/translate
- * No API key required for basic usage. Consider hosting your own instance for production use.
+ * Simple EN->VI translation using MyMemory Translation API.
+ * Free, no API key required for reasonable usage.
+ * API: https://mymemory.translated.net/doc/spec.php
  */
 public class TranslateService {
 
-    private static final String TRANSLATE_URL = "https://libretranslate.de/translate";
-    private final HttpClient httpClient;
+    private final HttpClient client = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build();
     private final ObjectMapper mapper = new ObjectMapper();
+    private final String apiUrl = "https://api.mymemory.translated.net/get";
+    private String lastError;
 
     public TranslateService() {
-        this(HttpClient.newHttpClient());
-    }
-
-    // Visible for testing
-    TranslateService(HttpClient client) {
-        this.httpClient = client;
+        System.out.println("[TranslateService] Using MyMemory API: " + apiUrl);
     }
 
     public String translateEnToVi(String text) {
         if (text == null || text.isBlank()) return null;
-        String payload = String.format("{\"q\":%s,\"source\":\"en\",\"target\":\"vi\",\"format\":\"text\"}",
-                mapper.valueToTree(text).toString());
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(TRANSLATE_URL))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(payload))
-                .build();
         try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                JsonNode node = mapper.readTree(response.body());
-                if (node.has("translatedText")) {
-                    return node.get("translatedText").asText();
-                }
+            String encoded = URLEncoder.encode(text, StandardCharsets.UTF_8);
+            String langpair = URLEncoder.encode("en|vi", StandardCharsets.UTF_8);
+            String url = apiUrl + "?q=" + encoded + "&langpair=" + langpair;
+            
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                lastError = "HTTP " + response.statusCode();
+                System.err.println("[TranslateService] Non-200: " + lastError);
+                return null;
             }
-        } catch (IOException | InterruptedException e) {
-            // ignore and return null
+
+            JsonNode root = mapper.readTree(response.body());
+            JsonNode responseData = root.get("responseData");
+            if (responseData == null) {
+                lastError = "No responseData in API response";
+                System.err.println("[TranslateService] Parse error: " + lastError);
+                return null;
+            }
+
+            JsonNode translated = responseData.get("translatedText");
+            if (translated == null || translated.isNull()) {
+                lastError = "No translatedText field";
+                System.err.println("[TranslateService] Parse error: " + lastError);
+                return null;
+            }
+
+            lastError = null;
+            String result = translated.asText();
+            System.out.println("[TranslateService] Success: " + text + " → " + result);
+            return result;
+        } catch (Exception e) {
+            lastError = e.getMessage();
+            System.err.println("[TranslateService] Exception: " + lastError);
+            e.printStackTrace();
+            return null;
         }
-        return null;
+    }
+
+    public String getLastError() {
+        return lastError;
     }
 }

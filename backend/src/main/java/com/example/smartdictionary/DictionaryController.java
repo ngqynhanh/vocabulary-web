@@ -26,6 +26,9 @@ public class DictionaryController {
     private Map<String, String> dictionaryData = new HashMap<>();
     // Store definitions for words not in dictionary (e.g., sample sets)
     private final Map<String, String> sampleSetDefinitions = new HashMap<>();
+    // Sample sets loaded from JSON resources
+    private List<Map<String, String>> animalSet = new ArrayList<>();
+    private List<Map<String, String>> codingSet = new ArrayList<>();
 
     // Load data when server starts
     @PostConstruct
@@ -44,6 +47,19 @@ public class DictionaryController {
                 flashcards.add(entry.getKey(), entry.getValue());
             }
             System.out.println("Dictionary loaded successfully!");
+
+            // Load sample sets from resources
+            animalSet = mapper.readValue(
+                new ClassPathResource("animal.json").getInputStream(),
+                new TypeReference<List<Map<String, String>>>() {}
+            );
+            codingSet = mapper.readValue(
+                new ClassPathResource("coding.json").getInputStream(),
+                new TypeReference<List<Map<String, String>>>() {}
+            );
+            // Keep definitions available for not-remembered lookups
+            addSampleDefinitions(animalSet);
+            addSampleDefinitions(codingSet);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -200,6 +216,28 @@ public class DictionaryController {
         response.put("message", "Word added to not-remembered list");
         response.put("word", key);
         return response;
+    }
+
+    // Sample set endpoints
+    @GetMapping("/flashcard/sample/animals")
+    public List<Map<String, String>> getAnimalSet() {
+        return animalSet;
+    }
+
+    @GetMapping("/flashcard/sample/coding")
+    public List<Map<String, String>> getCodingSet() {
+        return codingSet;
+    }
+
+    private void addSampleDefinitions(List<Map<String, String>> sampleSet) {
+        if (sampleSet == null) return;
+        for (Map<String, String> item : sampleSet) {
+            String word = item.getOrDefault("word", "").toLowerCase();
+            String definition = item.getOrDefault("definition", "");
+            if (!word.isEmpty() && !definition.isEmpty()) {
+                sampleSetDefinitions.put(word, definition);
+            }
+        }
     }
 
     // External Dictionary API endpoint removed - using only JSON data

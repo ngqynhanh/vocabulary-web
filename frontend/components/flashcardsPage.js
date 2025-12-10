@@ -2,6 +2,7 @@
 let isInitialized = false;
 let isActive = false; // Track if we're still on the flashcards page
 
+
 // Helper function to check if we're still on the flashcards page
 function isOnFlashcardsPage() {
     try {
@@ -96,16 +97,8 @@ export function setupFlashcardsPage() {
         history: [],
         favorites: [],
         'not-remembered': [],
-        animals: [
-            { term: "Lion", def: "A large cat that lives in prides and is known as the king of the jungle." },
-            { term: "Elephant", def: "The largest existing land animal, known for its long trunk and tusks." }
-        ],
-        coding: [
-            { term: "HTML", def: "HyperText Markup Language. The standard markup language for documents designed to be displayed in a web browser." },
-            { term: "CSS", def: "Cascading Style Sheets. A style sheet language used for describing the presentation of a document written in a markup language." },
-            { term: "JavaScript", def: "A programming language that conforms to the ECMAScript specification, used to create dynamic content." },
-            { term: "API", def: "Application Programming Interface. A set of functions and procedures allowing the creation of applications that access the features or data of an operating system, application, or other service." }
-        ]
+        animals: [],
+        coding: []
     };
 
     // State
@@ -200,6 +193,31 @@ export function setupFlashcardsPage() {
             }));
         } catch (err) {
             console.error('Failed to load not-remembered set', err);
+            return [];
+        }
+    }
+
+    // Fetch sample sets (animals, coding) from backend static resources
+    async function fetchSampleSet(setName) {
+        if (!isOnFlashcardsPage() || !isActive) {
+            return [];
+        }
+
+        try {
+            const res = await fetch(`http://localhost:8080/flashcard/sample/${encodeURIComponent(setName)}`);
+            if (!isOnFlashcardsPage() || !isActive) {
+                return [];
+            }
+
+            const cards = await res.json();
+            if (!Array.isArray(cards)) return [];
+
+            return cards.map(card => ({
+                term: card.word,
+                def: card.definition
+            }));
+        } catch (err) {
+            console.error(`Failed to load ${setName} set`, err);
             return [];
         }
     }
@@ -345,6 +363,8 @@ export function setupFlashcardsPage() {
             data.favorites = await fetchFavoritesSet();
         } else if (setName === 'not-remembered') {
             data['not-remembered'] = await fetchNotRememberedSet();
+        } else if (setName === 'animals' || setName === 'coding') {
+            data[setName] = await fetchSampleSet(setName);
         }
 
         // CRITICAL: Double-check we're still on the page after async operation
@@ -540,7 +560,7 @@ export function setupFlashcardsPage() {
             // Check current status
             const set = data[state.currentSet];
             if (!set || set.length === 0) {
-                elements.favoriteBtn.innerHTML = '<img src="icon/star-symbol-icon.png" alt="Favorite" class="icon-img">';
+                elements.favoriteBtn.innerHTML = '<img src="icon/star-black-icon.png" alt="Not favorite" class="icon-img">';
                 elements.favoriteBtn.style.filter = '';
                 return;
             }
@@ -557,8 +577,10 @@ export function setupFlashcardsPage() {
             }
         }
         
-        elements.favoriteBtn.innerHTML = '<img src="icon/star-symbol-icon.png" alt="Favorite" class="icon-img">';
-        elements.favoriteBtn.style.filter = isFavorite ? 'brightness(0) saturate(100%) invert(77%) sepia(95%) saturate(1352%) hue-rotate(1deg) brightness(105%) contrast(103%)' : '';
+        elements.favoriteBtn.innerHTML = isFavorite
+            ? '<img src="icon/star-symbol-icon.png" alt="Favorite" class="icon-img">'
+            : '<img src="icon/star-black-icon.png" alt="Not favorite" class="icon-img">';
+        elements.favoriteBtn.style.filter = '';
     }
 
     // Render the current card

@@ -23,6 +23,7 @@ public class DictionaryController {
     private final NotRememberedStack notRemembered = new NotRememberedStack();
     private final FavoriteWords favorites = new FavoriteWords();
     private final TranslateService translateService = new TranslateService();
+    private final DictionaryApiService dictionaryApi = new DictionaryApiService();
     private Map<String, String> dictionaryData = new HashMap<>();
     //Store definitions for words not in dictionary
     private final Map<String, String> sampleSetDefinitions = new HashMap<>();
@@ -157,6 +158,30 @@ public class DictionaryController {
             result.put("status", "error");
             String detail = translateService.getLastError();
             result.put("error", detail != null ? detail : "Translation service unavailable or API error. Check backend logs.");
+        }
+        return result;
+    }
+
+      // External Dictionary API (dictionaryapi.dev)
+    @GetMapping("/external/definitions")
+    public Map<String, Object> getExternalDefinitions(@RequestParam String word) {
+        Map<String, Object> result = new HashMap<>();
+        String json = dictionaryApi.fetchRawJson(word);
+        result.put("source", "dictionaryapi.dev");
+        result.put("word", word.toLowerCase());
+        if (json != null) {
+            result.put("status", "ok");
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                Object parsed = mapper.readValue(json, Object.class);
+                result.put("data", parsed);
+            } catch (IOException e) {
+                result.put("status", "parse-error");
+                result.put("error", "Failed to parse API response");
+            }
+        } else {
+            result.put("status", "error");
+            result.put("error", "No response or non-2xx status");
         }
         return result;
     }

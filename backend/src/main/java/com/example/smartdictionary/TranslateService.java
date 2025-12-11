@@ -72,6 +72,7 @@ public class TranslateService {
             System.err.println("[TranslateService] Exception: " + lastError);
             e.printStackTrace();
             return null;
+
         }
     }
 

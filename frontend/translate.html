@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Dictionary - Translate</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <nav>
+        <a href="index.html">Dictionary</a>
+        <a href="flashcards.html">Flashcards</a>
+        <a href="history.html">History</a>
+        <a href="translate.html" style="color:white; border-bottom: 2px solid #4285f4;">Translate</a>
+    </nav>
+
+    <div class="history-section">
+        <h1 class="history-title">Translate</h1>
+    </div>
+
+
+    <div class="container">
+        
+        <div class="translate-container">
+            <div class="translate-input-section single-column">
+                <div class="language-label">English → Vietnamese</div>
+                <textarea id="source-text" class="translate-textarea" placeholder="Enter English text to translate..."></textarea>
+                <textarea id="target-text" class="translate-textarea" placeholder="Translation will appear here..." readonly></textarea>
+            </div>
+            
+            <div class="translate-actions">
+                <button id="translate-btn" class="translate-button">Translate</button>
+                <button id="clear-btn" class="clear-button">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <script>
+        // Translation functionality using backend API (EN→VI only)
+        const sourceText = document.getElementById('source-text');
+        const targetText = document.getElementById('target-text');
+        const translateBtn = document.getElementById('translate-btn');
+        const clearBtn = document.getElementById('clear-btn');
+
+        // Pre-fill from URL parameter if coming from search page
+        const urlParams = new URLSearchParams(window.location.search);
+        const textParam = urlParams.get('text');
+        if (textParam) {
+            sourceText.value = textParam;
+        }
+
+        async function translate() {
+            const text = sourceText.value.trim();
+            if (!text) {
+                targetText.value = '';
+                return;
+            }
+
+            translateBtn.disabled = true;
+            translateBtn.textContent = 'Translating...';
+            targetText.value = 'Translating...';
+
+            try {
+                // Use backend /translate endpoint (EN→VI)
+                const response = await fetch(`http://localhost:8080/translate?text=${encodeURIComponent(text)}`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.status === 'ok' && data.translation) {
+                    targetText.value = data.translation;
+                } else {
+                    const errorMsg = data.error || 'Translation failed. Please try again.';
+                    targetText.value = errorMsg;
+                }
+            } catch (error) {
+                console.error('Translation error:', error);
+                targetText.value = 'Error connecting to server. Please try again.';
+            } finally {
+                translateBtn.disabled = false;
+                translateBtn.textContent = 'Translate';
+            }
+        }
+
+        function clear() {
+            sourceText.value = '';
+            targetText.value = '';
+        }
+
+        translateBtn.addEventListener('click', translate);
+        clearBtn.addEventListener('click', clear);
+        // Favorite button wiring occurs in app.js after translation
+
+        // Auto-translate on Enter (Ctrl+Enter or Cmd+Enter)
+        sourceText.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                translate();
+            }
+        });
+    </script>
+
+    <style>
+        .translate-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .translate-input-section.single-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .language-label {
+            font-weight: 700;
+            color: #0B162A;
+            font-size: 1rem;
+        }
+
+        .translate-textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        .translate-textarea:focus {
+            outline: none;
+            border-color: #4285f4;
+        }
+
+        .translate-textarea[readonly] {
+            background: #f5f5f5;
+            cursor: default;
+        }
+
+        .translate-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        .translate-button {
+            padding: 12px 40px;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .translate-button:hover:not(:disabled) {
+            background: #3367d6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(66, 133, 244, 0.3);
+        }
+
+        .translate-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .clear-button {
+            padding: 12px 40px;
+            background: #e0e0e0;
+            color: #333;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .clear-button:hover {
+            background: #d0d0d0;
+        }
+
+        @media (max-width: 768px) {
+            .translate-input-section.single-column {
+                gap: 12px;
+            }
+        }
+    </style>
+</body>
+</html>
+

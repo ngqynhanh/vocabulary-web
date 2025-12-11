@@ -15,6 +15,7 @@ public class FlashcardList {
 
     private CardNode head = null;
     private CardNode current = null;
+    private int size = 0;
 
     public void add(String word, String definition) {
         CardNode newNode = new CardNode(word, definition);
@@ -31,6 +32,7 @@ public class FlashcardList {
             temp.next = newNode;
             newNode.next = head;
         }
+        size++;
     }
 
     public CardNode getNext() {
@@ -38,5 +40,21 @@ public class FlashcardList {
         CardNode data = current;
         current = current.next;
         return data;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public CardNode getCurrent() {
+        return current;
+    }
+
+    public void reviewCurrent(boolean remembered, NotRememberedStack notRememberedStack) {
+        if (current == null) return;
+        if (!remembered && notRememberedStack != null) {
+            notRememberedStack.push(current.word);
+        }
+        current = current.next;
     }
 }

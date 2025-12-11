@@ -1,0 +1,18 @@
+[
+  {
+    "word": "html",
+    "definition": "HyperText Markup Language. The standard markup language for documents designed to be displayed in a web browser."
+  },
+  {
+    "word": "css",
+    "definition": "Cascading Style Sheets. A style sheet language used for describing the presentation of a document written in a markup language."
+  },
+  {
+    "word": "javascript",
+    "definition": "A programming language that conforms to the ECMAScript specification, used to create dynamic content."
+  },
+  {
+    "word": "api",
+    "definition": "Application Programming Interface. A set of functions and procedures allowing the creation of applications that access the features or data of an operating system, application, or other service."
+  }
+]

@@ -16,40 +16,39 @@ import java.util.Map;
 @CrossOrigin(origins = "*") // Allow frontend access
 public class DictionaryController {
 
-    // Data Structures
+    //Data Structures
     private final Trie trie = new Trie();
     private final HistoryStack history = new HistoryStack();
     private final FlashcardList flashcards = new FlashcardList();
     private final NotRememberedStack notRemembered = new NotRememberedStack();
     private final FavoriteWords favorites = new FavoriteWords();
-    private final DictionaryApiService dictionaryApi = new DictionaryApiService();
     private final TranslateService translateService = new TranslateService();
     private Map<String, String> dictionaryData = new HashMap<>();
-    // Store definitions for words not in dictionary (e.g., sample sets)
+    //Store definitions for words not in dictionary
     private final Map<String, String> sampleSetDefinitions = new HashMap<>();
-    // Sample sets loaded from JSON resources
+    //Sample sets loaded from JSON resources
     private List<Map<String, String>> animalSet = new ArrayList<>();
     private List<Map<String, String>> codingSet = new ArrayList<>();
 
-    // Load data when server starts
+    //Load data when server starts
     @PostConstruct
     public void init() {
         try {
-            // Read from src/main/resources/dictionary.json
+            //Read from src/main/resources/dictionary.json
             ObjectMapper mapper = new ObjectMapper();
             dictionaryData = mapper.readValue(
                 new ClassPathResource("dictionary.json").getInputStream(), 
                 new TypeReference<Map<String, String>>(){}
             );
 
-            // Populate Data Structures
+            //Populate Data Structures
             for (Map.Entry<String, String> entry : dictionaryData.entrySet()) {
                 trie.insert(entry.getKey());
                 flashcards.add(entry.getKey(), entry.getValue());
             }
             System.out.println("Dictionary loaded successfully!");
 
-            // Load sample sets from resources
+            //Load sample sets from resources
             animalSet = mapper.readValue(
                 new ClassPathResource("animal.json").getInputStream(),
                 new TypeReference<List<Map<String, String>>>() {}
@@ -58,7 +57,7 @@ public class DictionaryController {
                 new ClassPathResource("coding.json").getInputStream(),
                 new TypeReference<List<Map<String, String>>>() {}
             );
-            // Keep definitions available for not-remembered lookups
+            //Keep definitions available for not-remembered lookups
             addSampleDefinitions(animalSet);
             addSampleDefinitions(codingSet);
 
@@ -73,7 +72,7 @@ public class DictionaryController {
         String searchWord = word.toLowerCase();
         Map<String, Object> response = new HashMap<>();
 
-        // Always add to history, regardless of whether word is found
+        //Always add to history, regardless of whether word is found
         history.push(searchWord);
 
         if (dictionaryData.containsKey(searchWord)) {
@@ -162,7 +161,7 @@ public class DictionaryController {
         return result;
     }
 
-    // Get favorites as flashcard set
+    //Get favorites as flashcard set
     @GetMapping("/flashcard/favorites")
     public List<Map<String, String>> getFavoriteFlashcards() {
         List<WordItem> favoriteItems = favorites.list();
@@ -172,30 +171,6 @@ public class DictionaryController {
             card.put("word", item.getWord());
             card.put("definition", item.getDefinition());
             result.add(card);
-        }
-        return result;
-    }
-
-    // External Dictionary API (dictionaryapi.dev)
-    @GetMapping("/external/definitions")
-    public Map<String, Object> getExternalDefinitions(@RequestParam String word) {
-        Map<String, Object> result = new HashMap<>();
-        String json = dictionaryApi.fetchRawJson(word);
-        result.put("source", "dictionaryapi.dev");
-        result.put("word", word.toLowerCase());
-        if (json != null) {
-            result.put("status", "ok");
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                Object parsed = mapper.readValue(json, Object.class);
-                result.put("data", parsed);
-            } catch (IOException e) {
-                result.put("status", "parse-error");
-                result.put("error", "Failed to parse API response");
-            }
-        } else {
-            result.put("status", "error");
-            result.put("error", "No response or non-2xx status");
         }
         return result;
     }

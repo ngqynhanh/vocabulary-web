@@ -7,10 +7,13 @@ Backend stack: Spring Boot (Java). Core data structures implemented for trie sea
 ## Features
 - Search with trie suggestions and Levenshtein correction
 - Flashcard study flow (current/next, remember/not-remember)
-- Track not-remembered words via a stack for re-study
+- Track not-remembered words via a stack for re-study with deduplication
 - Favorites (O(1) lookup with `HashMap<String, WordItem>`) – add/remove/list/get
-- History of looked-up words (stack, newest-first)
+- History of looked-up words (stack with deduplication, newest-first, all searches tracked)
 - External dictionary integration (dictionaryapi.dev) for definitions
+- Sample flashcard sets (Animals, Programming/Coding)
+- Translation service (English → Vietnamese via MyMemory API)
+- Add favorites directly to flashcard rotation
 
 ## Base URL
 - Local development: `http://localhost:8080`
@@ -54,6 +57,39 @@ Backend stack: Spring Boot (Java). Core data structures implemented for trie sea
   - Returns the not-remembered stack (newest-first) for re-study.
   - Response: `string[]`
 
+- `GET /flashcard/favorites`
+  - Returns all favorited words as flashcards.
+  - Response: `[{ word: string, definition: string }]`
+
+- `GET /flashcard/not-remembered`
+  - Returns not-remembered words as flashcard set with definitions.
+  - Response: `[{ word: string, definition: string }]`
+
+- `POST /flashcard/not-remembered/{word}`
+  - Path: `word`
+  - Body (optional): `{ definition?: string }`
+  - Adds word to not-remembered stack. Accepts optional definition for sample sets.
+  - Response: `{ status: "ok", message: string, word: string }`
+
+- `POST /flashcard/not-remembered/{word}/remember`
+  - Path: `word`
+  - Marks a not-remembered word as remembered (removes from stack).
+  - Response: `{ status: "ok" | "not-found", message: string, word: string }`
+
+- `POST /flashcard/add-favorite`
+  - Body: `{ word: string, definition: string }`
+  - Adds a favorite word directly to the flashcard rotation list.
+  - Response: `{ status: "ok" | "error", message: string, word?: string }`
+
+### Sample Flashcard Sets
+- `GET /flashcard/sample/animals`
+  - Returns animal vocabulary flashcard set.
+  - Response: `[{ word: string, definition: string }]`
+
+- `GET /flashcard/sample/coding`
+  - Returns programming/coding vocabulary flashcard set.
+  - Response: `[{ word: string, definition: string }]`
+
 ### Favorites
 - Data structure: `Map<String, WordItem>` with O(1) CRUD operations
 - `WordItem` model: `{ word: string, definition: string }`
@@ -68,9 +104,8 @@ Backend stack: Spring Boot (Java). Core data structures implemented for trie sea
 
 - `POST /favorites/{word}`
   - Path: `word`
-  - Adds the word to favorites (requires existing in local dictionary).
+  - Adds the word to favorites. Accepts definition from body for words not in dictionary (e.g., sample sets, external words).
   - Response (ok): `{ status: "ok", favorite: true, word: string }`
-  - Response (error): `{ status: "error", message: "Word not found in dictionary" }`
 
 - `DELETE /favorites/{word}`
   - Path: `word`
@@ -92,9 +127,9 @@ Backend stack: Spring Boot (Java). Core data structures implemented for trie sea
 ## Data Structures (Backend)
 - `Trie` – prefix search for suggestions
 - `Levenshtein` – closest match suggestion when not found
-- `HistoryStack` – `push(word)`, `getHistory()`
-- `FlashcardList` – circular list with `getCurrent()`, `getNext()`, `reviewCurrent(remembered, stack)`
-- `NotRememberedStack` – `push(word)`, `getPending()`, `clear()`
+- `HistoryStack` – `push(word)` with deduplication, `getHistory()` - tracks all searches
+- `FlashcardList` – circular list with `getCurrent()`, `getNext()`, `reviewCurrent(remembered, stack)`, `add(word, definition)`
+- `NotRememberedStack` – `push(word)` with lowercase normalization and deduplication, `getPending()`, `remove(word)`, `clear()`
 - `FavoriteWords` – `add(WordItem)`, `get(word)`, `remove(word)`, `isFavorite(word)`, `list()`
 
 ## Typical Flows
@@ -102,20 +137,33 @@ Backend stack: Spring Boot (Java). Core data structures implemented for trie sea
   - Load current card: `GET /flashcard`
   - Flip in UI; mark as ✓ or ✗ → `POST /flashcard/remember` or `POST /flashcard/not-remember`
   - Next: `POST /flashcard/next`
-  - Review pending: `GET /flashcard/pending`
+  - Review pending: `GET /flashcard/pending` or `GET /flashcard/not-remembered`
+  - Mark as remembered: `POST /flashcard/not-remembered/{word}/remember`
 
 - Favorites:
   - Toggle favorite from UI with `GET` to check and `POST`/`DELETE` to set.
   - List all favorites: `GET /favorites`
+  - Add favorite to flashcard rotation: `POST /flashcard/add-favorite`
 
 - Search:
-  - Quick lookup: `GET /search?word=...`
+  - Quick lookup: `GET /search?word=...` (always adds to history)
   - Suggestions while typing: `GET /suggest?q=...`
   - External fallback: `GET /external/definitions?word=...`
+  - Add unknown word to favorites: `POST /favorites/{word}` with definition in body
+
+- Sample Sets:
+  - Load Animals set: `GET /flashcard/sample/animals`
+  - Load Coding set: `GET /flashcard/sample/coding`
+  - Mark sample word as not-remembered: `POST /flashcard/not-remembered/{word}` with definition
 
 ## Notes
 - CORS: Controller annotated to allow frontend access (`@CrossOrigin(origins = "*")`).
 - Local dictionary data is loaded from `src/main/resources/dictionary.json` at startup.
+- Sample sets loaded from `animal.json` and `coding.json` resources.
+- History tracking: All search queries (found or not found) are added to history stack with deduplication.
+- Not-remembered stack: Automatically deduplicates and normalizes to lowercase. Re-adding moves word to top.
+- Favorites: Can store words from dictionary, sample sets, or external API with custom definitions.
+- Backend state (history, not-remembered, favorites) is in-memory only - resets on server restart.
 - Consider persistence for favorites and pending stack (JSON/SQLite) if you need durability across restarts.
 
 ## Run Backend

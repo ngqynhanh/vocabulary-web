@@ -309,10 +309,36 @@ export function setupFlashcardsPage() {
                     try {
                         const searchRes = await fetch(`http://localhost:8080/search?word=${encodeURIComponent(word)}`);
                         const searchData = await searchRes.json();
-                        const def = searchData?.definition || searchData?.meaning || searchData?.def || 'No definition available.';
+
+                        let def = searchData?.definition || searchData?.meaning || searchData?.def;
+
+                        // If not found in local dictionary, try external definitions
+                        if (!def) {
+                            try {
+                                const extRes = await fetch(`http://localhost:8080/external/definitions?word=${encodeURIComponent(word)}`);
+                                const ext = await extRes.json();
+                                if (ext.status === 'ok' && Array.isArray(ext.data) && ext.data.length > 0) {
+                                    const entry = ext.data[0];
+                                    if (entry.meanings && entry.meanings.length > 0) {
+                                        const firstDef = entry.meanings[0].definitions && entry.meanings[0].definitions[0];
+                                        if (firstDef && firstDef.definition) {
+                                            def = firstDef.definition;
+                                        }
+                                    }
+                                }
+                            } catch {
+                                // ignore external errors
+                            }
+                        }
+
+                        // Only add to flashcards if we have a usable definition
+                        if (!def || `${def}`.trim().length === 0) {
+                            return null;
+                        }
+
                         return { term: word, def };
                     } catch {
-                        return { term: word, def: 'No definition available.' };
+                        return null;
                     }
                 }));
                 
